@@ -1,25 +1,55 @@
 ---
-title: "Model Fitting and Ancestral Character State Reconstruction"
+title: "Estimating Likelihood"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
-**Aim**: Test if a simulated character evolves under symmetric or asymmetric Markov model of character evolution using AIC. Reconstruct its ancestral states.
+# Excrcise: claculate tree likelihood
+
+Try coding your own Likelihood algorithm that calculates likelihood of a state pattern given: (1) tree, (2) rate matrix with specified parameters, and (3) specified initial vector of probabilities at tree root. Make this algorithm working for a 3-taxon tree. Your toy algorithm should work like the Felsentein's pruning algorithm from today's lecture. Use binary characters for brevity.
+
+
+Before, coding the Ln algorithm, simulate a tree and note the main data structures that store the tree topology and branch lengths
 
 ```{r}
 library(ape)
+library(phytools)
+
+set.seed(100)
+tr<-pbtree(n=3, scale=1, b=1, d=0)
+plot(tr)
+nodelabels()
+edgelabels()
+tiplabels()
+
+# save tree file, this is optional
+#write.tree(tr, file='3_taxon.tree')
+```
+
+You will need these data objects for your Ln algoritm *tr\$edge*, *tr\$edge.length*
+```{r}
+# tree topology
+tr$edge
+
+# branch lengths
+tr$edge.length
+
 ```
 
 
-### Calculating Likelihood on tree
-See lecture 6 for Felsentein's pruning algorithm.
+
+# Answer to the Exercise: Calculating Likelihood on tree
+See the slides for Felsentein's pruning algorithm.
 
 The general steps of the algorithm are as follows:
 
-1. Initialize $Q$ matrix and $\pi$ (initial vector)
+1. Initialize $Q$ matrix and $\pi$ (initial vector at the tree root)
 2. Recode data at tips as probabilities
-3. Calculate conditional likelihoods $L_c$ at each node by traversing the tree from tips to roots. For two branches -- left and right ($b_l$ and $b_r$) -- and their corresponding tip probabilities ($T_l$, $T_r$, both column vectors), the conditional likelihood is  $L_c=e^{Qb_l}T_l*e^{Qb_r}T_r$. Since R does not have inbuilt functionality for column vectors, $T_l$, $T_r$ can be treated as row vectors through the following conversion $L_c=T_l(e^{Qb_l})^\textbf{T}*T_r(e^{Qb_r})^\textbf{T}$, where $^\textbf{T}$ is a matrix transpose
+3. Calculate conditional likelihoods $L_c$ at each node by traversing the tree from tips to roots. 
+    * For two branches -- left and right ($b_l$ and $b_r$) -- and their corresponding tip probabilities ($T_l$, $T_r$, both column vectors), the conditional likelihood is  $L_c=e^{Qb_l}T_l*e^{Qb_r}T_r$. 
+    * Since R does not have inbuilt functionality for column vectors, $T_l$, $T_r$ can be treated as row vectors through the following conversion $L_c=T_l(e^{Qb_l})^\textbf{T}*T_r(e^{Qb_r})^\textbf{T}$, where $^\textbf{T}$ is a matrix transpose
 4. Upon reaching root, the tree likelihood is $L=sum(L_c\pi)$
 
 
@@ -45,8 +75,8 @@ pi
 
 #### 2. Recoding data at tips as probabilities
 ```{r}
-# read in tree
-tr <- read.tree(file='3_taxon.tree')
+# read in tree, this is optional if the tree was not simulated
+# tr <- read.tree(file='3_taxon.tree')
 
 # Let's imagine that our taxa at tips (t1, t2, t3) have the following character states (we use a binary character)
 data <- c(1,0,1)
@@ -54,7 +84,7 @@ names(data) <- c('t1', 't2', 't3')
 data
 ```
 
-We rate their tip probability vectors as matrix
+We represent the tip probability vectors as matrix
 ```{r}
 data.probs <- matrix(c(
   0,1,
@@ -73,6 +103,11 @@ plot(tr)
 nodelabels()
 edgelabels()
 tiplabels()
+
+# tree topology
+tr$edge
+# branch lengths
+tr$edge.length
 ```
 
 
