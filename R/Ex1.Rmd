@@ -1,0 +1,152 @@
+---
+title: "Ex1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Welcome to the ForBio Course wiki for modeing discrete traits!
+
+To run the exercise you need to have [R](https://www.r-project.org/) and [RStudio](https://www.rstudio.com/) preinstalled.
+Also, instal the required packages by running the following code from within Rstudio:
+
+```{r}
+#install.packages(c("corHMM", "phytools")
+library("corHMM")
+library("phytools")
+```
+
+
+# Exercise 1. Model Selection and Ancestral State Reconstruction
+
+**Aim:** Reconstruct *ancestral states* (ANS) of character evolution. Compare models using 
+statistical modeling selection criteria (AIC).
+
+**Instruction:**
+1. Simulate tree.
+2. Simulate character evolution on the tree under $M_0$ (asymmetric model).
+3. Fit two models to data ($M_0$: asymmetric and $M_1$: symmetric). Reconstruct ancestral states.
+4. Compare models using AIC.
+
+
+
+## 1. Simulate tree
+Simulate tree using pure birth process
+
+```{r}
+tree<-pbtree(n=200, scale=100, b=1, d=0)
+plot(tree)
+```
+
+
+
+## 2. Simulate character evolution on the tree under asymmetric model.
+
+For simulation character evolution you need a tree and rate matrix $Q$.
+
+```{r}
+# make rate matrix Q
+Q <- matrix(
+  c(
+    -0.03, 0.03,
+    0.1, -0.1
+    ), 2,2, byrow = T)
+
+Q
+
+```
+
+Simulate character evolution on tree using Q and plot it.
+```{r}
+hist <- sim.history(tree, Q, nsim=1)
+plot(hist)
+```
+
+## 3. Fit two models to data. Reconstruct ancestral states. 
+
+For running inference one needs a tree, pre-specified parametrization of rate matrix, and data (=characyter). The inference returns rates
+of character evolution ($Q$) and character state probabilities at tree nodes.
+
+## Inference using Symmetrical Model $M_1$
+```{r}
+# one-rate symmetrical model
+Q.Sym <- matrix(
+  c(
+    NA, 1,
+    1, NA
+  ), 2,2, byrow = T)
+
+Q.Sym
+
+# Inference
+taxa <- cbind(hist$tip.label, hist$states)
+Recon_Q.Sim <- rayDISC(hist, taxa, rate.mat=Q.Sym, node.states="marginal", 
+        model="ARD", root.p="maddfitz")
+
+# infered rate matrix
+Recon_Q.Sim
+
+
+
+```
+
+Plot ANS
+```{r}
+plotRECON(tree, Recon_Q.Sim$states, piecolors=c('black', 'red'), title="1-rate Model")
+```
+
+
+##  Inference using Asymmetrical Model ($M_0$)
+
+```{r}
+# 2-rate symmetrical model
+Q.Asym <- matrix(
+  c(
+    NA, 1,
+    2, NA
+  ), 2,2, byrow = T)
+
+Q.Asym
+
+# Inference
+taxa <- cbind(hist$tip.label, hist$states)
+Recon_Q.Asim <- rayDISC(hist, taxa, rate.mat=Q.Asym, node.states="marginal", 
+                       model="ARD", root.p="maddfitz")
+
+# infered rate matrix
+Recon_Q.Asim
+
+# plot ANS
+plotRECON(tree, Recon_Q.Asim$states, piecolors=c('black', 'red'), title="1-rate Model")
+
+```
+
+
+
+##   4. Compare models using AIC.  
+
+```{r}
+# this objects contain all necessary info
+Recon_Q.Sim
+Recon_Q.Asim
+
+# AIC is here
+Recon_Q.Sim$AIC
+
+# delta AIC
+Recon_Q.Sim$AIC-Recon_Q.Asim$AIC
+```
+
+
+##   Answer the Questions 
+
+1. Which model performs better, $M_0$ or $M_1$?
+2. Does model choice affect the reconstructed state probabilities? How we can assess it?
+3. Run the same simulations with varying number of tips, for example, pbtree(n=10, ...), pbtree(n=500, ...), .... 
+How does number of data points affect inference?
+
+

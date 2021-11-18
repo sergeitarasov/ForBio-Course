@@ -1,14 +1,14 @@
 
 ##############################################################################################
-# Testing Correlated Character Evolution 
+# Testing Correlated Character Evolution
 #
 # Aim: Test if simulated characters are (un)correlated using AIC
-#     
+#
 # 1. Simulate tree
 # 2. Simulate character evolution under correlated model
 # 3. Fit correlated and uncorrelated model
 # 4. Compare models using AIC
-# 
+#
 #
 ##############################################################################################
 
@@ -18,7 +18,7 @@ library("phytools")
 
 setwd("~/Documents/Courses/Bergen_2020/R")
 
-# useful functions 
+# useful functions
 source("SMM_functions.R")
 
 
@@ -99,7 +99,7 @@ out.corr <- rayDISC(sim.h, taxa, rate.mat=M.corr, node.states="marginal", model=
 
 
 out.equal
-out.corr 
+out.corr
 
 out.equal$AIC-out.corr$AIC
 

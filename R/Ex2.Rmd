@@ -1,0 +1,131 @@
+---
+title: "Ex 2"
+output: html_notebook
+---
+
+
+# Exercise 2. Testing Correlated Character Evolution
+
+
+**Aim:** Test if character evolution is (un)correlated using AIC.
+
+**Instruction:**
+1. Simulate tree.
+2. Simulate character evolution on the tree under the correlated model $M_0$.
+3. Fit two models to data ($M_0$: correlated and $M_1$: uncorrelated).
+4. Compare models using AIC.
+
+For this exercise you need to source some precooked functions from the file `SMM_functions.R`; they are used for constructing amalgamated reate matrices. Copy this file from GitHub to you working directory and execute the code below.
+
+```{r}
+# useful functions 
+source("SMM_functions.R")
+```
+
+
+
+## 1. Simulate tree.
+
+Let's make a correlated character where tail color evolution is correlated with tail shape (long, short)
+
+```{r}
+# initialize shape character
+char.state<-c("L", "S")
+rate.param<-c(0.1, 0.1)
+TL<-init_char_matrix(char.state, rate.param, diag.as=0)
+diag(TL)<-rate.param*-1
+TL
+
+# initialize color character
+char.state<-c("r", "b")
+rate.param<-c(0.1, 0.1)
+COL<-init_char_matrix(char.state, rate.param, diag.as=0)
+diag(COL)<-rate.param*-1
+COL
+
+# amalgamate two characters
+Q.ind<-comb2matrices(TL, COL, controlling.state=2, name.sep="", diag.as="")
+Q.ind
+
+# make the character correlated
+Q.cor <- Q.ind
+Q.cor[2,4] <- 0.3
+Q.cor[3,4] <- 0.3
+diag(Q.cor) <- 0
+diag(Q.cor) <- -rowSums(Q.cor)
+Q.cor
+
+```
+
+
+
+## 2. Simulate character evolution on the tree under the correlated model $M_0$.
+
+```{r}
+tree<-pbtree(n=100, scale=200)
+sim.h<-sim.history(tree, Q.cor, nsim=1, anc=setNames(c(1, 0, 0, 0), colnames(Q.cor) ) )
+plot(sim.h)
+```
+
+
+
+                                                          
+## 3. Fit two models to data ($M_0$: correlated and $M_1$: uncorrelated).
+
+Let's first construct rate matrices that we will use for the ML inference
+```{r}
+# matrix template for inference
+char.state<-c("T", "C")
+rate.param<-c(1, 1)
+TL<-init_char_matrix(char.state, rate.param, diag.as=0)
+
+char.state<-c("r", "b")
+rate.param<-c(1, 1)
+COL<-init_char_matrix(char.state, rate.param, diag.as=0)
+
+# uncorrelated matrix
+M.equal<-comb2matrices(TL, COL,  name.sep="", diag.as="", non.rate.as=NA)
+M.equal
+
+# correlated matrix
+M.corr <- M.equal
+M.corr[2,4] <- 2
+M.corr[3,4] <- 2
+M.corr
+```
+
+
+### ML Inference
+
+                          ####
+
+```{r}
+# uncorrelated matrix
+taxa <- cbind(hist$tip.label, sim.h$states)
+out.equal <- rayDISC(sim.h, taxa, rate.mat=M.equal, node.states="marginal", model="ARD", root.p="maddfitz")
+
+# correlated matrix
+out.corr <- rayDISC(sim.h, taxa, rate.mat=M.corr, node.states="marginal", model="ARD", root.p="maddfitz")
+```
+
+
+
+## 4. Compare models using AIC.
+
+```{r}
+# our results
+out.equal
+out.corr 
+
+# delta AIC
+out.equal$AIC-out.corr$AIC
+```
+
+
+##   Answer the Questions 
+
+1. Which model is suggested by AIC: the uncorrelated or correlated one?
+2. What are the differences inn Q between correlated and uncorrelated models?
+3. Do you know any real life cases where evolution of discrete traits might be correlated?
+
+
